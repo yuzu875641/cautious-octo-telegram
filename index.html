@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>画像ギャラリー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 min-h-screen flex flex-col items-center">
+    <div class="w-full max-w-4xl bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h1 class="text-3xl font-bold text-center text-indigo-600 mb-4">画像ギャラリー</h1>
+        <form id="searchForm" class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <input type="text" id="keyword" placeholder="キーワードを入力" class="w-full sm:w-2/3 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200">
+            <button type="submit" class="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition duration-200">
+                検索
+            </button>
+        </form>
+    </div>
+
+    <div id="gallery" class="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 画像はここに動的に追加されます -->
+    </div>
+
+    <div id="message" class="mt-8 text-center text-gray-500 font-semibold hidden"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchForm = document.getElementById('searchForm');
+            const keywordInput = document.getElementById('keyword');
+            const gallery = document.getElementById('gallery');
+            const messageDiv = document.getElementById('message');
+
+            searchForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const keyword = keywordInput.value.trim();
+                if (!keyword) {
+                    showMessage('キーワードを入力してください。', true);
+                    return;
+                }
+                
+                gallery.innerHTML = '';
+                showMessage('検索中...', false);
+
+                try {
+                    const response = await fetch(`https://api.lolicon.app/setu/v2?r18=1&num=20&keyword=${encodeURIComponent(keyword)}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    if (data.data && data.data.length > 0) {
+                        data.data.forEach(item => {
+                            const card = document.createElement('div');
+                            card.className = 'relative group cursor-pointer overflow-hidden rounded-xl shadow-lg bg-gray-50 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1';
+                            
+                            const img = document.createElement('img');
+                            img.src = item.urls.original;
+                            img.alt = item.title;
+                            img.className = 'w-full h-48 object-cover rounded-t-xl transition-transform duration-300 group-hover:scale-105';
+                            
+                            const title = document.createElement('p');
+                            title.textContent = item.title;
+                            title.className = 'p-3 text-sm font-semibold text-center text-gray-700 truncate';
+
+                            card.appendChild(img);
+                            card.appendChild(title);
+                            gallery.appendChild(card);
+                        });
+                        showMessage('', true);
+                    } else {
+                        showMessage('画像が見つかりませんでした。', true);
+                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    showMessage('画像の取得中にエラーが発生しました。', true);
+                }
+            });
+
+            function showMessage(text, isError) {
+                messageDiv.textContent = text;
+                messageDiv.classList.toggle('text-red-500', isError);
+                messageDiv.classList.toggle('text-gray-500', !isError);
+                messageDiv.classList.remove('hidden');
+                if (text === '') {
+                    messageDiv.classList.add('hidden');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
